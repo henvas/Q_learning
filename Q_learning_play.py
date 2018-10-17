@@ -1,10 +1,10 @@
-import World
+import World2 as World
 import threading
 import time
 import random
 
 epsilon = 0.2
-discount = 0.3
+discount = 0.6
 actions = World.actions     # ["up", "down", "left", "right"]
 states = []                 # states = (x, y) location
 Q = {}
@@ -97,7 +97,7 @@ def run():
         # update learning rate
         alpha = pow(t, -0.1)
 
-        time.sleep(0.1)
+        time.sleep(0.01)
 
 
 t = threading.Thread(target=run)

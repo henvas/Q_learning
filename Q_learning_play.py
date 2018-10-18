@@ -4,7 +4,7 @@ import time
 import random
 
 epsilon = 0.2
-discount = 0.6
+discount = 0.5
 actions = World.actions     # ["up", "down", "left", "right"]
 states = []                 # states = (x, y) location
 Q = {}
@@ -18,7 +18,7 @@ for i in range(World.x):
 for state in states:
     temp = {}
     for action in actions:
-        temp[action] = 0.1
+        temp[action] = 0.3
         World.set_cell_score(state, action, temp[action])
     Q[state] = temp
 
@@ -74,7 +74,7 @@ def update_Q(s, a, alpha, reward, gamma, s_2, maxQ):
 def run():
     global discount
     time.sleep(0.1)
-    alpha = 1               # learning rate
+    alpha = .2               # learning rate
     t = 1                   # time
     while True:
         s = World.player
@@ -95,7 +95,7 @@ def run():
             t = 1
 
         # update learning rate
-        alpha = pow(t, -0.1)
+        #alpha = pow(t, -0.1)
 
         time.sleep(0.01)
 

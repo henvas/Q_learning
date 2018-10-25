@@ -1,5 +1,8 @@
 __author__ = 'philippe'
 from tkinter import *
+import numpy as np
+import random
+import math
 master = Tk()
 
 triangle_size = 0.1
@@ -7,16 +10,21 @@ cell_score_min = -0.2
 cell_score_max = 0.2
 Width = 100
 (x, y) = (5, 5)
-actions = ["up", "down", "left", "right"]
+actions = [0, 1, 2, 3]  # ["up", "down", "left", "right"]
 
 board = Canvas(master, width=x*Width, height=y*Width)
-player = (0, y-1)
+player = np.array([0, y-1])
 score = 1
 restart = False
 walk_reward = -0.04
+stepCounter = 0
+max_steps = 50
 
 walls = [(1, 1), (1, 2), (2, 1), (2, 2)]
 specials = [(4, 1, "red", -1), (4, 0, "green", 1)]
+specials_pos = []
+for i, j, c, w in specials:
+    specials_pos.append((i, j))
 cell_scores = {}
 
 
@@ -62,6 +70,7 @@ render_grid()
 
 def set_cell_score(state, action, val):
     global cell_score_min, cell_score_max
+    state = (state[0], state[1])
     triangle = cell_scores[state][action]
     green_dec = int(min(255, max(0, (val - cell_score_min) * 255.0 / (cell_score_max - cell_score_min))))
     green = hex(green_dec)[2:]
@@ -75,23 +84,34 @@ def set_cell_score(state, action, val):
 
 
 def try_move(dx, dy):
-    global player, x, y, score, walk_reward, me, restart
+    global player, x, y, score, walk_reward, me, restart, stepCounter
     if restart == True:
         restart_game()
+    stepCounter += 1
+    if stepCounter % 100 == 0:
+        # print(stepCounter)
+        pass
+    if stepCounter >= max_steps:
+        score -= 0
+        # print("Max steps overstepped, score: ", score)
+        restart = True
+        return
     new_x = player[0] + dx
     new_y = player[1] + dy
     score += walk_reward
     if (new_x >= 0) and (new_x < x) and (new_y >= 0) and (new_y < y) and not ((new_x, new_y) in walls):
         board.coords(me, new_x*Width+Width*2/10, new_y*Width+Width*2/10, new_x*Width+Width*8/10, new_y*Width+Width*8/10)
-        player = (new_x, new_y)
+        player = np.array([new_x, new_y])
     for (i, j, c, w) in specials:
         if new_x == i and new_y == j:
             score -= walk_reward
             score += w
             if score > 0:
-                print("Success! score: ", score)
+                pass
+                #print("Success! score: ", score)
             else:
-                print("Fail! score: ", score)
+                pass
+                #print("Fail! score: ", score)
             restart = True
             return
     #print "score: ", score
@@ -113,12 +133,24 @@ def call_right(event):
     try_move(1, 0)
 
 
-def restart_game():
-    global player, score, me, restart
-    player = (0, y-1)
+def restart_game(board_rs=True):
+    global player, score, me, restart, stepCounter
+    new_x = random.randint(0, 9)
+    new_y = random.randint(0, 9)
+    while True:
+        if (new_x >= 0) and (new_x < x) and (new_y >= 0) and (new_y < y) and not ((new_x, new_y) in walls) and not (
+                (new_x, new_y) in specials_pos):
+            break
+        else:
+            new_x = random.randint(0, 9)
+            new_y = random.randint(0, 9)
+    player = np.array([new_x, new_y])
+    #player = np.array([0, y-1])
     score = 1
+    stepCounter = 0
     restart = False
-    board.coords(me, player[0]*Width+Width*2/10, player[1]*Width+Width*2/10, player[0]*Width+Width*8/10, player[1]*Width+Width*8/10)
+    if board_rs:
+        board.coords(me, player[0]*Width+Width*2/10, player[1]*Width+Width*2/10, player[0]*Width+Width*8/10, player[1]*Width+Width*8/10)
 
 def has_restarted():
     return restart

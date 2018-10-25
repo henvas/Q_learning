@@ -1,7 +1,6 @@
 import os
 from random import sample as rsample
 import numpy as np
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D

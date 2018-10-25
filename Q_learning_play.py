@@ -1,10 +1,10 @@
-import World2 as World
+import World as World
 import threading
 import time
 import random
 
-epsilon = 0.2
-discount = 0.5
+epsilon = 1
+discount = .8
 actions = World.actions     # ["up", "down", "left", "right"]
 states = []                 # states = (x, y) location
 Q = {}
@@ -18,7 +18,7 @@ for i in range(World.x):
 for state in states:
     temp = {}
     for action in actions:
-        temp[action] = 0.3
+        temp[action] = 0.1
         World.set_cell_score(state, action, temp[action])
     Q[state] = temp
 
@@ -30,6 +30,7 @@ for (i, j, c, w) in World.specials:
 
 def move(action):
     s_1 = World.player
+    s_1 = (s_1[0], s_1[1])
     reward = -World.score
     # Up, down, left, right
     if action == actions[0]:
@@ -41,6 +42,7 @@ def move(action):
     if action == actions[3]:
         World.try_move(1, 0)
     s_2 = World.player
+    s_2 = (s_2[0], s_2[1])
     reward += World.score
     return s_1, action, reward, s_2
 
@@ -56,6 +58,7 @@ def max_Q(s):
 
 
 def policy(max_act):
+    global epsilon
     if random.random() > epsilon:
         return max_act
     else:
@@ -72,12 +75,13 @@ def update_Q(s, a, alpha, reward, gamma, s_2, maxQ):
 
 
 def run():
-    global discount
+    global discount, epsilon
     time.sleep(0.1)
-    alpha = .2               # learning rate
+    alpha = .08               # learning rate
     t = 1                   # time
     while True:
         s = World.player
+        s = (s[0], s[1])
 
         # choose an action:
         max_act, _ = max_Q(s)
@@ -87,12 +91,14 @@ def run():
 
         _, maxQ = max_Q(s_2)
         update_Q(s, a, alpha, r, discount, s_2, maxQ)
-
         t += 1
         if World.has_restarted():
             World.restart_game()
+            print(World.player)
             time.sleep(0.1)
             t = 1
+            epsilon *= 0.995
+            epsilon = max(0.05, epsilon)
 
         # update learning rate
         #alpha = pow(t, -0.1)

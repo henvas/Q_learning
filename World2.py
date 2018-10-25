@@ -1,5 +1,7 @@
 __author__ = 'philippe'
 from tkinter import *
+import numpy as np
+import random
 master = Tk()
 
 triangle_size = 0.1
@@ -7,16 +9,18 @@ cell_score_min = -0.2
 cell_score_max = 0.2
 Width = 100
 (x, y) = (10, 10)
-actions = ["up", "down", "left", "right"]
+actions = [0, 1, 2, 3]  # ["up", "down", "left", "right"]
 
 board = Canvas(master, width=x*Width, height=y*Width)
-player = (0, 0)
+player = np.array([0, 0])       # (0,0)
 score = 1
 restart = False
-walk_reward = -0.04
+walk_reward = -0.004     #-0.004
 goal = 0
+max_step = 200
+stepCounter = 0
 
-walls = [(4, 7), (3, 7), (0, 8)]
+walls = [(3, 7), (7, 2)]
 for i in range(0, 10):
     for j in range(0, 10):
         if i == 0:
@@ -43,7 +47,7 @@ for i in range(0, 10):
             if j == 9:
                 walls.append((i, j))
         if i == 7:
-            if j == 1 or (j > 2 and j <= 9):
+            if j == 1 or (j > 2 and j <= 7) or j == 9:
                 walls.append((i, j))
         if i == 8:
             if j == 3:
@@ -53,7 +57,7 @@ for i in range(0, 10):
                 walls.append((i, j))
 
 
-specials = [(2, 4, "red", -4), (9, 8, "red", -4), (9, 9, "green", 4), (6, 0, "green", 30)]
+specials = [(2, 4, "red", -2), (9, 8, "red", -2), (9, 9, "green", 2), (6, 0, "green", 0)]
 bonus = (6, 0)
 cell_scores = {}
 
@@ -100,6 +104,7 @@ render_grid()
 
 def set_cell_score(state, action, val):
     global cell_score_min, cell_score_max
+    state = (state[0], state[1])
     triangle = cell_scores[state][action]
     green_dec = int(min(255, max(0, (val - cell_score_min) * 255.0 / (cell_score_max - cell_score_min))))
     green = hex(green_dec)[2:]
@@ -113,27 +118,40 @@ def set_cell_score(state, action, val):
 
 
 def try_move(dx, dy):
-    global player, x, y, score, walk_reward, me, restart, specials, bonus
+    global player, x, y, score, walk_reward, me, restart, specials, bonus, stepCounter
     if restart == True:
         restart_game()
+    stepCounter += 1
+    if stepCounter % 100 == 0:
+        #print(stepCounter)
+        pass
+    if stepCounter >= max_step:
+        score -= 3
+        #print("Max steps overstepped, score: ", score)
+        restart = True
+        return
     new_x = player[0] + dx
     new_y = player[1] + dy
     score += walk_reward
     if (new_x >= 0) and (new_x < x) and (new_y >= 0) and (new_y < y) and not ((new_x, new_y) in walls):
         board.coords(me, new_x*Width+Width*2/10, new_y*Width+Width*2/10, new_x*Width+Width*8/10, new_y*Width+Width*8/10)
-        player = (new_x, new_y)
+        player = np.array([new_x, new_y])
     counter = 0
     for (i, j, c, w) in specials:
         if new_x == i and new_y == j:
             score -= walk_reward
             score += w
+            if len(specials) == 3 and c == "green":
+                score += 6
             if new_x == bonus[0] and new_y == bonus[1]:
                 specials.pop(counter)
                 continue
             if score > 0:
-                print("Success! score: ", score)
+                pass
+                #print("Success! score: ", score)
             else:
-                print("Fail! score: ", score)
+                pass
+                #print("Fail! score: ", score)
             restart = True
             return
         counter += 1
@@ -156,13 +174,24 @@ def call_right(event):
     try_move(1, 0)
 
 
-def restart_game():
-    global player, score, me, restart, specials
-    specials = [(2, 4, "red", -4), (9, 8, "red", -4), (9, 9, "green", 4), (6, 0, "green", 30)]
-    player = (0, 0)
+def restart_game(board_rs=True):
+    global player, score, me, restart, specials, stepCounter
+    specials = [(2, 4, "red", -2), (9, 8, "red", -2), (9, 9, "green", 2), (6, 0, "green", 0)]
+    new_x = random.randint(0, 9)
+    new_y = random.randint(0, 9)
+    while True:
+        if (new_x >= 0) and (new_x < x) and (new_y >= 0) and (new_y < y) and not ((new_x, new_y) in walls) and not ((new_x, new_y) in specials):
+            break
+        else:
+            new_x = random.randint(0, 9)
+            new_y = random.randint(0, 9)
+    player = np.array([new_x, new_y])
+    #player = np.array([0, 0])
+    stepCounter = 0
     score = 1
     restart = False
-    board.coords(me, player[0]*Width+Width*2/10, player[1]*Width+Width*2/10, player[0]*Width+Width*8/10, player[1]*Width+Width*8/10)
+    if board_rs:
+        board.coords(me, player[0]*Width+Width*2/10, player[1]*Width+Width*2/10, player[0]*Width+Width*8/10, player[1]*Width+Width*8/10)
 
 def has_restarted():
     return restart

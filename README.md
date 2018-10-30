@@ -11,7 +11,7 @@ Prioritized Experience Replay
 
 The Board:
 
-![Alt text](Q_learning/Pics/img.jpg?raw=true "Board")
+![Alt text](Q_learning/Pics/Board.PNG?raw=true "Board")
 
 
 

@@ -88,7 +88,7 @@ with graph1.as_default():
     TargetNetwork = QNetwork(name='TargetNetwork', hidden_size=hidden_size, learning_rate=learning_rate)
 
 
-# Thanks of the very good implementation of Arthur Juliani https://github.com/awjuliani
+# Thanks for the very good implementation from Arthur Juliani https://github.com/awjuliani
 def update_target_graph():
     # Get the parameters of our DQNNetwork
     from_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "DQNetwork")

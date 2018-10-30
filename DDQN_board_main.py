@@ -9,25 +9,6 @@ import matplotlib.pyplot as plt
 
 
 actions = World.actions     # ["up", "down", "left", "right"]
-'''
-states = []                 # states = (x, y) location
-
-
-# Set state-coordinates
-for i in range(World.x):
-    for j in range(World.y):
-        states.append((i, j))
-
-# Init Q matrix and set colors for cells
-for stater in states:
-    temp = {}
-    for action in actions:
-        temp[action] = 0.1
-        World.set_cell_score(stater, action, temp[action])
-
-for (i, j, c, w) in World.specials:
-    for action in actions:
-        World.set_cell_score((i, j), action, w)'''
 
 
 class QNetwork:
@@ -77,14 +58,14 @@ class Memory():
         return [self.buffer[ii] for ii in idx]
 
 
-train_episodes = 2000          # max number of episodes to learn from
+train_episodes = 1000          # max number of episodes to learn from
 max_steps = 10000                # max steps in an episode
 gamma = 0.99                   # future reward discount
 
 # Exploration parameters
 explore_start = 1.0            # exploration probability at start
 explore_stop = 0.01            # minimum exploration probability
-decay_rate = 0.0002            # exponential decay rate for exploration prob
+decay_rate = 0.0001            # exponential decay rate for exploration prob
 
 # Network parameters
 hidden_size = 32               # number of units in each Q-network hidden layer
@@ -101,11 +82,13 @@ max_tau = 500
 
 tf.reset_default_graph()
 graph1 = tf.get_default_graph()
+# Instantiate both DQN and and target network
 with graph1.as_default():
     mainQN = QNetwork(name='DQNetwork', hidden_size=hidden_size, learning_rate=learning_rate)
     TargetNetwork = QNetwork(name='TargetNetwork', hidden_size=hidden_size, learning_rate=learning_rate)
 
 
+# Thanks of the very good implementation of Arthur Juliani https://github.com/awjuliani
 def update_target_graph():
     # Get the parameters of our DQNNetwork
     from_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "DQNetwork")
@@ -139,7 +122,7 @@ def move(act):
 
 
 def populate_memory():
-    # Take one random step to get the pole and cart moving
+    # Take one random step to get moving (not necessary?)
     _, act, reward, state = move(random.choice(actions))
 
     memory = Memory(max_size=memory_size)
@@ -155,7 +138,7 @@ def populate_memory():
 
         if World.has_restarted():
 
-            # The simulation fails so no next state
+            # The simulation ends so no next state
             next_state = np.zeros(state.shape)
             # Add experience to memory
             memory.add((state, action, reward, next_state))
@@ -192,8 +175,6 @@ def train(memory):
             while t < max_steps:
                 step += 1
                 tau += 1
-                # Uncomment this next line to watch the training
-                # env.render()
 
                 # Explore or Exploit
                 explore_p = explore_stop + (explore_start - explore_stop) * np.exp(-decay_rate * step)
@@ -227,8 +208,8 @@ def train(memory):
 
                     # Start new episode
                     World.restart_game(board_rs=False)
-                    # Take one random step to get the pole and cart moving
-                    _, action, reward, state = move(random.choice(actions))
+                    # Take one random step to get moving?
+                    #_, action, reward, state = move(random.choice(actions))
 
                 else:
                     # Add experience to memory
@@ -243,7 +224,7 @@ def train(memory):
                 rewards = np.array([each[2] for each in batch])
                 next_states = np.array([each[3] for each in batch])
 
-                ### DOUBLE DQN Logic
+                # DOUBLE DQN Logic:
                 # Use DQNNetwork to select the action to take at next_state (a') (action with the highest Q-value)
                 # Use TargetNetwork to calculate the Q_val of Q(s',a')
 
@@ -257,7 +238,7 @@ def train(memory):
 
 
 
-                # Set target_Qs to 0 for states where episode ends
+                # Set target_Qs to r for states where episode ends
                 episode_ends = (next_states == np.zeros(states[0].shape)).all(axis=1)
                 for i in range(0, len(batch)):
                     terminal = episode_ends[i]
@@ -329,8 +310,8 @@ def run(saver):
                     t = test_max_steps
                     World.restart_game()
                     time.sleep(0.1)
-                    # Take one random step to get the pole and cart moving
-                    _, action, reward, state = move(random.choice(actions))
+                    # Take one random step to get moving?
+                    #_, action, reward, state = move(random.choice(actions))
 
                 else:
                     state = next_state

@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import World as World
+import Worlds.World as World
 import threading
 import time
 import random

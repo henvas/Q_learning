@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 #import gym_world as gym
-from gym_world import World
+from Worlds.gym_world import World
 import threading
 import time
 import random

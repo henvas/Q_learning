@@ -8,28 +8,6 @@ import random
 from collections import deque
 import matplotlib.pyplot as plt
 
-'''
-actions = World.actions     # ["up", "down", "left", "right"]
-
-states = []                 # states = (x, y) location
-
-
-# Set state-coordinates
-for i in range(World.x):
-    for j in range(World.y):
-        states.append((i, j))
-
-# Init Q matrix and set colors for cells
-for stater in states:
-    temp = {}
-    for action in actions:
-        temp[action] = 0.1
-        World.set_cell_score(stater, action, temp[action])
-
-for (i, j, c, w) in World.specials:
-    for action in actions:
-        World.set_cell_score((i, j), action, w)'''
-
 
 class QNetwork:
     def __init__(self, learning_rate=0.01, state_size=2,
@@ -121,26 +99,9 @@ def update_target_graph():
         op_holder.append(to_var.assign(from_var))
     return op_holder
 
-'''
-def move(act):
-    s_1 = World.player
-    reward = -World.score
-    # Up, down, left, right
-    if act == actions[0]:
-        World.try_move(0, -1)
-    if act == actions[1]:
-        World.try_move(0, 1)
-    if act == actions[2]:
-        World.try_move(-1, 0)
-    if act == actions[3]:
-        World.try_move(1, 0)
-    s_2 = World.player
-    reward += World.score
-    return s_1, act, reward, s_2'''
-
 
 def populate_memory(env):
-    # Take one random step to get the pole and cart moving
+    # Take one random step
     state, reward, done = env.step(random.choice(env.ACTIONS))
 
     memory = Memory(max_size=memory_size)
@@ -243,7 +204,7 @@ def train(env, memory):
                     env.restart_game()
                     # Uncomment this next line to watch the training
                     render_game(env)
-                    # Take one random step to get the pole and cart moving
+                    # Take one random step
                     #_state, reward, done = env.step(random.choice(env.ACTIONS))
 
                 else:

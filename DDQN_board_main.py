@@ -58,18 +58,18 @@ class Memory():
         return [self.buffer[ii] for ii in idx]
 
 
-train_episodes = 1000          # max number of episodes to learn from
+train_episodes = 500          # max number of episodes to learn from
 max_steps = 10000                # max steps in an episode
-gamma = 0.99                   # future reward discount
+gamma = 0.8                   # future reward discount
 
 # Exploration parameters
 explore_start = 1.0            # exploration probability at start
 explore_stop = 0.01            # minimum exploration probability
-decay_rate = 0.0001            # exponential decay rate for exploration prob
+decay_rate = 0.003            # exponential decay rate for exploration prob
 
 # Network parameters
 hidden_size = 32               # number of units in each Q-network hidden layer
-learning_rate = 0.0001         # Q-network learning rate
+learning_rate = 0.01         # Q-network learning rate
 
 # Memory parameters
 memory_size = 10000            # memory capacity
@@ -77,7 +77,7 @@ batch_size = 32                # experience mini-batch size
 pretrain_length = 10000   # number experiences to pretrain the memory
 
 # We update the target network with the DQNetwork every tau step
-max_tau = 500
+max_tau = 200
 
 
 tf.reset_default_graph()
@@ -122,10 +122,8 @@ def move(act):
 
 
 def populate_memory():
-    # Take one random step to get moving (not necessary?)
-    _, act, reward, state = move(random.choice(actions))
-
     memory = Memory(max_size=memory_size)
+    state = World.player
 
     # Make a bunch of random actions and store the experiences
     for ii in range(pretrain_length):
@@ -144,8 +142,7 @@ def populate_memory():
             memory.add((state, action, reward, next_state))
 
             World.restart_game(board_rs=False)
-            # Take one random step to get the pole and cart moving
-            _, action, reward, state = move(random.choice(actions))
+
         else:
             # Add experience to memory
             memory.add((state, action, reward, next_state))
@@ -208,8 +205,6 @@ def train(memory):
 
                     # Start new episode
                     World.restart_game(board_rs=False)
-                    # Take one random step to get moving?
-                    #_, action, reward, state = move(random.choice(actions))
 
                 else:
                     # Add experience to memory
@@ -235,9 +230,6 @@ def train(memory):
 
                 target_Qs_batch = []
 
-
-
-
                 # Set target_Qs to r for states where episode ends
                 episode_ends = (next_states == np.zeros(states[0].shape)).all(axis=1)
                 for i in range(0, len(batch)):
@@ -248,8 +240,6 @@ def train(memory):
                     else:
                         target = rewards[i] + gamma * Qs_target_next_state[i][action]
                         target_Qs_batch.append(target)
-
-                #target_Qs[episode_ends] = (0, 0, 0, 0)
 
                 #targets = rewards + gamma * np.max(target_Qs, axis=1)
 
@@ -289,7 +279,7 @@ def plot(rewards_list):
 def run(saver):
     time.sleep(0.1)
     test_episodes = 10
-    test_max_steps = 400
+    test_max_steps = 600
     with tf.Session(graph=graph1) as sess:
         saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))
         for ep in range(1, test_episodes):
@@ -308,10 +298,9 @@ def run(saver):
 
                 if World.has_restarted():
                     t = test_max_steps
+                    print("Game restart, score: ", reward)
                     World.restart_game()
-                    time.sleep(0.1)
-                    # Take one random step to get moving?
-                    #_, action, reward, state = move(random.choice(actions))
+                    time.sleep(0.01)
 
                 else:
                     state = next_state

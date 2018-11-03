@@ -17,10 +17,16 @@ score = 1
 restart = False
 walk_reward = -0.004     #-0.004
 goal = 0
-max_step = 200
+max_step = 500
 stepCounter = 0
 
+specials = [(2, 4, "red", -1), (9, 8, "red", -1), (9, 9, "green", 3)]
+specials_pos = []
+for i, j, c, w in specials:
+    specials_pos.append((i, j))
 walls = [(3, 7), (7, 2)]
+
+
 for i in range(0, 10):
     for j in range(0, 10):
         if i == 0:
@@ -57,8 +63,6 @@ for i in range(0, 10):
                 walls.append((i, j))
 
 
-specials = [(2, 4, "red", -2), (9, 8, "red", -2), (9, 9, "green", 2), (6, 0, "green", 0)]
-bonus = (6, 0)
 cell_scores = {}
 
 
@@ -118,7 +122,7 @@ def set_cell_score(state, action, val):
 
 
 def try_move(dx, dy):
-    global player, x, y, score, walk_reward, me, restart, specials, bonus, stepCounter
+    global player, x, y, score, walk_reward, me, restart, specials, stepCounter
     if restart == True:
         restart_game()
     stepCounter += 1
@@ -126,7 +130,7 @@ def try_move(dx, dy):
         #print(stepCounter)
         pass
     if stepCounter >= max_step:
-        score -= 3
+        score -= 0
         #print("Max steps overstepped, score: ", score)
         restart = True
         return
@@ -141,11 +145,6 @@ def try_move(dx, dy):
         if new_x == i and new_y == j:
             score -= walk_reward
             score += w
-            if len(specials) == 3 and c == "green":
-                score += 6
-            if new_x == bonus[0] and new_y == bonus[1]:
-                specials.pop(counter)
-                continue
             if score > 0:
                 pass
                 #print("Success! score: ", score)
@@ -175,12 +174,11 @@ def call_right(event):
 
 
 def restart_game(board_rs=True):
-    global player, score, me, restart, specials, stepCounter
-    specials = [(2, 4, "red", -2), (9, 8, "red", -2), (9, 9, "green", 2), (6, 0, "green", 0)]
+    global player, score, me, restart, specials, stepCounter, specials_pos
     new_x = random.randint(0, 9)
     new_y = random.randint(0, 9)
     while True:
-        if (new_x >= 0) and (new_x < x) and (new_y >= 0) and (new_y < y) and not ((new_x, new_y) in walls) and not ((new_x, new_y) in specials):
+        if (new_x >= 0) and (new_x < x) and (new_y >= 0) and (new_y < y) and not ((new_x, new_y) in walls) and not ((new_x, new_y) in specials_pos):
             break
         else:
             new_x = random.randint(0, 9)

@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import Worlds.World as World
+import Worlds.World2 as World
 import threading
 import time
 import random
@@ -30,11 +30,11 @@ class QNetwork:
 
             # ReLU hidden layers
             self.fc1 = tf.contrib.layers.fully_connected(self.inputs_, hidden_size)
-            #self.fc2 = tf.contrib.layers.fully_connected(self.fc1, hidden_size)
-            #self.fc3 = tf.contrib.layers.fully_connected(self.fc2, hidden_size)
+            self.fc2 = tf.contrib.layers.fully_connected(self.fc1, hidden_size)
+            self.fc3 = tf.contrib.layers.fully_connected(self.fc2, hidden_size)
 
             # Linear output layer
-            self.output = tf.contrib.layers.fully_connected(self.fc1, action_size,
+            self.output = tf.contrib.layers.fully_connected(self.fc3, action_size,
                                                             activation_fn=None)
 
             ### Train with loss (targetQ - Q)^2
@@ -124,8 +124,8 @@ class SumTree(object):
 class Memory(object):  # stored as ( s, a, r, s_ ) in SumTree
 
     PER_e = 0.01  # Hyperparameter that we use to avoid some experiences to have 0 probability of being taken
-    PER_a = 0.6  # Hyperparameter that we use to make a tradeoff between taking only exp with high priority and sampling randomly
-    PER_b = 0.4  # importance-sampling, from initial value increasing to 1
+    PER_a = 0.8  # Hyperparameter that we use to make a tradeoff between taking only exp with high priority and sampling randomly
+    PER_b = 0.5  # importance-sampling, from initial value increasing to 1
 
     PER_b_increment_per_sampling = 0.001
 
@@ -204,32 +204,17 @@ class Memory(object):  # stored as ( s, a, r, s_ ) in SumTree
             self.tree.update(ti, p)
 
 
-'''
-class Memory:
-    def __init__(self, max_size=1000):
-        self.buffer = deque(maxlen=max_size)
-
-    def add(self, experience):
-        self.buffer.append(experience)
-
-    def sample(self, batch_size):
-        idx = np.random.choice(np.arange(len(self.buffer)),
-                               size=batch_size,
-                               replace=False)
-        return [self.buffer[ii] for ii in idx]'''
-
-
-train_episodes = 1000          # max number of episodes to learn from
+train_episodes = 10000          # max number of episodes to learn from
 max_steps = 10000                # max steps in an episode
 gamma = 0.99                   # future reward discount
 
 # Exploration parameters
 explore_start = 1.0            # exploration probability at start
 explore_stop = 0.01            # minimum exploration probability
-decay_rate = 0.0001            # exponential decay rate for exploration prob
+decay_rate = 0.00005            # exponential decay rate for exploration prob
 
 # Network parameters
-hidden_size = 32               # number of units in each Q-network hidden layer
+hidden_size = 64               # number of units in each Q-network hidden layer
 learning_rate = 0.0001         # Q-network learning rate
 
 # Memory parameters
@@ -238,7 +223,7 @@ batch_size = 32                # experience mini-batch size
 pretrain_length = 10000   # number experiences to pretrain the memory
 
 # We update the target network with the DQNetwork every tau step
-max_tau = 500
+max_tau = 3500
 
 
 tf.reset_default_graph()
@@ -283,9 +268,6 @@ def move(act):
 
 
 def populate_memory():
-    # Take one random step to get moving (not necessary?)
-    #_, act, reward, state = move(random.choice(actions))
-
     memory = Memory(memory_size)
     state = World.player
 
@@ -306,8 +288,6 @@ def populate_memory():
             memory.store((state, action, reward, next_state))
 
             World.restart_game(board_rs=False)
-            # Take one random step to get moving
-            #_, action, reward, state = move(random.choice(actions))
 
         else:
             # Add experience to memory
@@ -326,10 +306,8 @@ def train(memory):
         sess.run(tf.global_variables_initializer())
 
         tau = 0
-
         update_target = update_target_graph()
         sess.run(update_target)
-
         step = 0
         for ep in range(1, train_episodes):
             total_reward = 0
@@ -371,8 +349,6 @@ def train(memory):
 
                     # Start new episode
                     World.restart_game(board_rs=False)
-                    # Take one random step to get moving?
-                    #_, action, reward, state = move(random.choice(actions))
 
                 else:
                     # Add experience to memory
@@ -399,9 +375,6 @@ def train(memory):
 
                 target_Qs_batch = []
 
-
-
-
                 # Set target_Qs to r for states where episode ends
                 episode_ends = (next_states == np.zeros(states[0].shape)).all(axis=1)
                 for i in range(0, len(batch)):
@@ -412,9 +385,6 @@ def train(memory):
                     else:
                         target = rewards[i] + gamma * Qs_target_next_state[i][action]
                         target_Qs_batch.append(target)
-
-
-                #targets = rewards + gamma * np.max(target_Qs, axis=1)
 
                 targets_mb = np.array([each for each in target_Qs_batch])
 
@@ -456,14 +426,14 @@ def plot(rewards_list):
 def run(saver):
     time.sleep(0.1)
     test_episodes = 10
-    test_max_steps = 400
+    test_max_steps = 600
     with tf.Session(graph=graph1) as sess:
         saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))
         for ep in range(1, test_episodes):
             t = 0
             state = World.player
             while t < test_max_steps:
-                time.sleep(0.1)
+                time.sleep(0.01)
                 # Get action from Q-network
                 feed = {mainQN.inputs_: state.reshape((1, *state.shape))}
                 Qs = sess.run(mainQN.output, feed_dict=feed)
@@ -474,11 +444,10 @@ def run(saver):
                 state, action, reward, next_state = move(action)
 
                 if World.has_restarted():
+                    print("Game restart, score: ", reward)
                     t = test_max_steps
                     World.restart_game()
                     time.sleep(0.1)
-                    # Take one random step to get moving?
-                    #_, action, reward, state = move(random.choice(actions))
 
                 else:
                     state = next_state

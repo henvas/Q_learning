@@ -1,13 +1,11 @@
 # Q_learning
 Test different types of Q-learning algorithms on a board game, +1 for green squares, -1 for red. 
-- Q-learning
-- Deep Q-learning (DQN)
-- DQN with fixed Q-targets
-- Double DQN with fixed Q-targets
+- Q-learning                                (Q_learning_play.py)
+- Double DQN with fixed Q-targets           (DDQN_board_main.py)
+- DDQN with Prioritized Experience Replay   (DDQN_PER.py)
 
 TODO: 
 Dueling double DQN (DDDQN)
-Prioritized Experience Replay
 
 The Board:
 

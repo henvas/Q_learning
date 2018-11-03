@@ -13,6 +13,10 @@ The Board:
 
 ![Alt text](Pics/Board.PNG?raw=true "Board")
 
+Hard world: 
+
+![Alt text](Pics/World_hard.PNG?raw=true "Board")
+
 
 
 Credits (For making the basic World, and DQN-example): 

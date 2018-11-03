@@ -56,7 +56,7 @@ class Memory():
         return [self.buffer[ii] for ii in idx]
 
 
-train_episodes = 5000          # max number of episodes to learn from
+train_episodes = 500          # max number of episodes to learn from
 max_steps = 10000                # max steps in an episode
 gamma = 0.99                   # future reward discount
 
@@ -75,7 +75,7 @@ batch_size = 32                # experience mini-batch size
 pretrain_length = 10000   # number experiences to pretrain the memory
 
 # We update the target network with the DQNetwork every tau step
-max_tau = 1000
+max_tau = 100
 
 
 tf.reset_default_graph()
